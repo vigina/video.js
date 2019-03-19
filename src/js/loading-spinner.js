@@ -2,26 +2,37 @@
  * @file loading-spinner.js
  */
 import Component from './component';
+import * as dom from './utils/dom';
 
-/* Loading Spinner
-================================================================================ */
 /**
- * Loading spinner for waiting events
+ * A loading spinner for use during waiting/loading events.
  *
  * @extends Component
- * @class LoadingSpinner
  */
 class LoadingSpinner extends Component {
 
   /**
-   * Create the component's DOM element
+   * Create the `LoadingSpinner`s DOM element.
    *
-   * @method createEl
+   * @return {Element}
+   *         The dom element that gets created.
    */
   createEl() {
-    return super.createEl('div', {
-      className: 'vjs-loading-spinner'
+    const isAudio = this.player_.isAudio();
+    const playerType = this.localize(isAudio ? 'Audio Player' : 'Video Player');
+    const controlText = dom.createEl('span', {
+      className: 'vjs-control-text',
+      innerHTML: this.localize('{1} is loading.', [playerType])
     });
+
+    const el = super.createEl('div', {
+      className: 'vjs-loading-spinner',
+      dir: 'ltr'
+    });
+
+    el.appendChild(controlText);
+
+    return el;
   }
 }
 

@@ -8,9 +8,10 @@ projects
 test/*.map
 .bunyipconfig.js
 .s3config.json
+.eslintcache
 
 node_modules
-npm-debug.log
+npm-debug.log*
 
 sandbox/*
 !sandbox/*.example
@@ -23,10 +24,13 @@ sandbox/*
 *results.xml
 *.log
 
-test/coverage/*
+test/dist/*
 .coveralls.yml
 .sass-cache
 
 dist/*
+es5/*
 
 .idea/
+
+core.js

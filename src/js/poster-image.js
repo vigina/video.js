@@ -5,19 +5,25 @@ import ClickableComponent from './clickable-component.js';
 import Component from './component.js';
 import * as Fn from './utils/fn.js';
 import * as Dom from './utils/dom.js';
-import * as browser from './utils/browser.js';
+import {silencePromise} from './utils/promise';
 
 /**
- * The component that handles showing the poster image.
+ * A `ClickableComponent` that handles showing the poster image for the player.
  *
- * @param {Player|Object} player
- * @param {Object=} options
- * @extends Button
- * @class PosterImage
+ * @extends ClickableComponent
  */
 class PosterImage extends ClickableComponent {
 
-  constructor(player, options){
+  /**
+   * Create an instance of this class.
+   *
+   * @param {Player} player
+   *        The `Player` that this class should attach to.
+   *
+   * @param {Object} [options]
+   *        The key/value store of player options.
+   */
+  constructor(player, options) {
     super(player, options);
 
     this.update();
@@ -25,9 +31,7 @@ class PosterImage extends ClickableComponent {
   }
 
   /**
-   * Clean up the poster image
-   *
-   * @method dispose
+   * Clean up and dispose of the `PosterImage`.
    */
   dispose() {
     this.player().off('posterchange', this.update);
@@ -35,38 +39,32 @@ class PosterImage extends ClickableComponent {
   }
 
   /**
-   * Create the poster's image element
+   * Create the `PosterImage`s DOM element.
    *
    * @return {Element}
-   * @method createEl
+   *         The element that gets created.
    */
   createEl() {
-    let el = Dom.createEl('div', {
+    const el = Dom.createEl('div', {
       className: 'vjs-poster',
 
       // Don't want poster to be tabbable.
       tabIndex: -1
     });
 
-    // To ensure the poster image resizes while maintaining its original aspect
-    // ratio, use a div with `background-size` when available. For browsers that
-    // do not support `background-size` (e.g. IE8), fall back on using a regular
-    // img element.
-    if (!browser.BACKGROUND_SIZE_SUPPORTED) {
-      this.fallbackImg_ = Dom.createEl('img');
-      el.appendChild(this.fallbackImg_);
-    }
-
     return el;
   }
 
   /**
-   * Event handler for updates to the player's poster source
+   * An {@link EventTarget~EventListener} for {@link Player#posterchange} events.
    *
-   * @method update
+   * @listens Player#posterchange
+   *
+   * @param {EventTarget~Event} [event]
+   *        The `Player#posterchange` event that triggered this function.
    */
-  update() {
-    let url = this.player().poster();
+  update(event) {
+    const url = this.player().poster();
 
     this.setSrc(url);
 
@@ -80,39 +78,48 @@ class PosterImage extends ClickableComponent {
   }
 
   /**
-   * Set the poster source depending on the display method
+   * Set the source of the `PosterImage` depending on the display method.
    *
-   * @param {String} url The URL to the poster source
-   * @method setSrc
+   * @param {string} url
+   *        The URL to the source for the `PosterImage`.
    */
   setSrc(url) {
-    if (this.fallbackImg_) {
-      this.fallbackImg_.src = url;
-    } else {
-      let backgroundImage = '';
-      // Any falsey values should stay as an empty string, otherwise
-      // this will throw an extra error
-      if (url) {
-        backgroundImage = `url("${url}")`;
-      }
+    let backgroundImage = '';
 
-      this.el_.style.backgroundImage = backgroundImage;
+    // Any falsy value should stay as an empty string, otherwise
+    // this will throw an extra error
+    if (url) {
+      backgroundImage = `url("${url}")`;
     }
+
+    this.el_.style.backgroundImage = backgroundImage;
   }
 
   /**
-   * Event handler for clicks on the poster image
+   * An {@link EventTarget~EventListener} for clicks on the `PosterImage`. See
+   * {@link ClickableComponent#handleClick} for instances where this will be triggered.
    *
-   * @method handleClick
+   * @listens tap
+   * @listens click
+   * @listens keydown
+   *
+   * @param {EventTarget~Event} event
+   +        The `click`, `tap` or `keydown` event that caused this function to be called.
    */
-  handleClick() {
+  handleClick(event) {
     // We don't want a click to trigger playback when controls are disabled
-    // but CSS should be hiding the poster to prevent that from happening
+    if (!this.player_.controls()) {
+      return;
+    }
+
     if (this.player_.paused()) {
-      this.player_.play();
+      silencePromise(this.player_.play());
     } else {
       this.player_.pause();
     }
+
+    // call handleFocus manually to get hotkeys working
+    this.player_.handleFocus({});
   }
 
 }
